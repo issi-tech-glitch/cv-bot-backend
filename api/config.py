@@ -10,3 +10,6 @@ MODEL = "gemini-2.5-flash"
 MAX_ROUNDS = 5
 NAME = "Clarissa"
 NAME_ASSISTANT = "Pia"
+
+N8N_WEBHOOK_URL = os.environ["N8N_WEBHOOK_URL"]
+N8N_WEBHOOK_SECRET = os.environ["N8N_WEBHOOK_SECRET"]

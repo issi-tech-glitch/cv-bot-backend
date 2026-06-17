@@ -1,12 +1,42 @@
+import requests
+from api.config import N8N_WEBHOOK_URL, N8N_WEBHOOK_SECRET
+from pydantic import BaseModel, EmailStr, ValidationError
+
+class UserDetails(BaseModel):
+    email: EmailStr
+    name: str = "Name not provided"
+    notes: str = "not provided"
+
+def _trigger_webhook(payload: dict):
+    headers = {"X-CV-Bot-Secret": N8N_WEBHOOK_SECRET}
+    try:
+        resp = requests.post(N8N_WEBHOOK_URL, json=payload, headers=headers, timeout=10)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Webhook failed: {e}")
+        return False
+    return True
+
+
 def record_user_details(email, name="Name not provided", notes="not provided"):
-    print(f"Recording {name} with email {email} and notes {notes}")
-    return {"recorded": "ok"}
+    try:
+        data = UserDetails(email=email, name=name, notes=notes)
+    except ValidationError as e:
+        print(f"Validation failed: {e}")
+        return {"recorded": "invalid", "error": str(e)}
+
+    print(f"Recording {data.name} with email {data.email}")
+    ok = _trigger_webhook({"type": "user_details", **data.model_dump()})
+    return {"recorded": "ok" if ok else "failed"}
 
 
 def record_unknown_question(question):
     print(f"Recording {question}")
-    return {"recorded": "ok"}
-
+    ok = _trigger_webhook({
+        "type": "unknown_question",
+        "question": question,
+    })
+    return {"recorded": "ok" if ok else "failed"}
 
 tools = [
     {
@@ -19,7 +49,7 @@ tools = [
                 "properties": {
                     "email": {"type": "string", "description": "E-Mail-Adresse des Nutzers"},
                     "name": {"type": "string", "description": "Name des Nutzers"},
-                    "notes": {"type": "string", "description": "Zusätzliche Notizen zum Nutzer"}
+                    "notes": {"type": "string", "description": "Zusätzliche Notizen zum Nutzer und eine kurze Zusammenfassung, wofür der Nutzer sich interessieren könnte, welche Dienstleistung er evtl in Anspruch nehmen will oder ähnliches"}
                 },
                 "required": ["email"]
             }
