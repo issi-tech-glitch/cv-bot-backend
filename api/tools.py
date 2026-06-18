@@ -49,7 +49,7 @@ tools = [
                 "properties": {
                     "email": {"type": "string", "description": "E-Mail-Adresse des Nutzers"},
                     "name": {"type": "string", "description": "Name des Nutzers"},
-                    "notes": {"type": "string", "description": "Zusätzliche Notizen zum Nutzer und eine kurze Zusammenfassung, wofür der Nutzer sich interessieren könnte, welche Dienstleistung er evtl in Anspruch nehmen will oder ähnliches"}
+                    "notes": {"type": "string", "description": "Eine kurze Zusammenfassung des Chats des Nutzers, insbesondere im Hinblick darauf, für welche Technologien und Dienstleistungen sich der Nutzer interessiert. Falls der Nutzer bereits eine Projektidee im Chat formuliert hat, diese hier auch ausführlich zusammengefasst eintragen."}
                 },
                 "required": ["email"]
             }
