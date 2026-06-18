@@ -1,8 +1,12 @@
-cat > .gitignore << 'EOF'
-venv/
+.git
+.gitignore
 .env
-**/.DS_Store
-.DS_Store
+.venv
+venv/
 __pycache__/
 *.pyc
-EOF
+**/.DS_Store
+.DS_Store
+README.md
+Dockerfile
+.dockerignore
