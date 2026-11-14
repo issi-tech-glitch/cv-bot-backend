@@ -1,0 +1,58 @@
+# Testet jede Änderung (Pull Requests, z.B. von Renovate, und Pushes auf
+# main). Nur ein grüner Stand auf main wird auf den Branch "production"
+# übernommen, den der VPS automatisch einspielt.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Produktions-Image bauen
+        run: docker build -t cv-bot-backend:ci .
+
+      - name: Container starten und API prüfen
+        run: |
+          docker run -d --name cv-bot -p 8000:8000 \
+            -e GOOGLE_API_KEY=ci \
+            -e N8N_WEBHOOK_URL=http://localhost/ci \
+            -e N8N_WEBHOOK_SECRET=ci \
+            cv-bot-backend:ci
+          for i in $(seq 1 30); do
+            curl -fs -o /dev/null http://localhost:8000/openapi.json && break
+            sleep 1
+          done
+          if ! curl -fs http://localhost:8000/openapi.json | grep -q '"/api/chat"'; then
+            docker logs cv-bot
+            exit 1
+          fi
+          echo "API läuft, /api/chat ist registriert"
+
+  promote:
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Getesteten Stand für den VPS freigeben
+        run: git push origin HEAD:refs/heads/production
